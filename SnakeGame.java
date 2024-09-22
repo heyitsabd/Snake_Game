@@ -151,33 +151,38 @@ public class SnakeGame extends JPanel implements ActionListener, KeyListener {
         if (snakeHead.x < 0 || snakeHead.x >= boardWidth / tileSize || snakeHead.y < 0 || snakeHead.y >= boardHeight / tileSize) {
             gameOver = true;
         }
+
+        if (starPoint != null && (System.currentTimeMillis() - starPointCreationTime) > 2000) {
+            starPoint = null;
+        }
     }
 
     private long starPointCreationTime; 
     private void startStarPointThread() {
         starPointThread = new Thread(() -> {
-            while (!gameOver) {
-                try {
-                    Thread.sleep(10); 
-                } catch (InterruptedException e) {
-                    if (gameOver) {
-                        return;
+            synchronized (this) {
+                while (!gameOver) {
+                    try {
+                        // Wait until notified
+                        wait(); 
+    
+                        // Check the condition after being notified
+                        if (score % 5 == 0 && starPoint == null && score != 0) {
+                            placeStarPoint();
+                            starPointCreationTime = System.currentTimeMillis();
+                        }
+                        
+                    } catch (InterruptedException e) {
+                        if (gameOver) {
+                            return;
+                        }
                     }
-                }
-                // If score is divisible by 5, spawn a star point
-                if (score % 5 == 0 && starPoint == null && score!=0) {
-                    placeStarPoint();
-                    starPointCreationTime=System.currentTimeMillis();
-                }
-
-                if(starPoint!=null && (System.currentTimeMillis()-starPointCreationTime)>2000){
-                    starPoint = null;
                 }
             }
         });
         starPointThread.start();
-
     }
+    
     
 
     @Override
